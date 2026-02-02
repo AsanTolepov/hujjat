@@ -1,8 +1,8 @@
 const { Telegraf, Markup } = require('telegraf');
 const admin = require('firebase-admin');
+const http = require('http');
 
-// 1. Firebase Admin ulanishi (Render va Lokal muhit uchun moslashtirilgan)
-// Render-dagi Environment Variables bo'limiga FIREBASE_CONFIG nomli o'zgaruvchi qo'shasiz
+// 1. Firebase Admin ulanishi (Render muhitiga moslangan)
 const firebaseConfig = process.env.FIREBASE_CONFIG 
     ? JSON.parse(process.env.FIREBASE_CONFIG) 
     : require("./serviceAccountKey.json");
@@ -21,6 +21,7 @@ const CARD_NUMBER = '8600 0000 0000 0000';
 
 const userState = {};
 
+// Bot buyruqlari
 bot.start((ctx) => {
     ctx.reply("Assalamu aleykum! Saytdan olgan to'lov ID raqamingizni yuboring (Masalan: HUJJAT-123456).");
 });
@@ -39,7 +40,7 @@ bot.on('text', async (ctx) => {
     }
 });
 
-// 3. Chek qabul qilish va Adminlarga yuborish
+// Chek qabul qilish
 bot.on('photo', async (ctx) => {
     const userId = ctx.from.id;
     const state = userState[userId];
@@ -62,7 +63,7 @@ bot.on('photo', async (ctx) => {
     }
 });
 
-// 4. Tasdiqlash va Rad etish mantiqi
+// Tasdiqlash va Rad etish
 bot.on('callback_query', async (ctx) => {
     const data = ctx.callbackQuery.data;
     const adminName = ctx.from.first_name;
@@ -82,13 +83,11 @@ bot.on('callback_query', async (ctx) => {
             if (action === 'app') {
                 const amount = Number(parts[2]);
                 const targetUserId = parts[3];
-            
-                // 1. Foydalanuvchi balansini oshirish
+
                 await db.collection('users').doc(pData.userId).set({
                     balance: admin.firestore.FieldValue.increment(amount)
                 }, { merge: true });
-            
-                // 2. To'lov hujjatini yangilash
+
                 await paymentDoc.ref.update({ 
                     status: 'completed',
                     amount: amount
@@ -100,14 +99,25 @@ bot.on('callback_query', async (ctx) => {
                 const targetUserId = parts[2];
                 await paymentDoc.ref.update({ status: 'rejected' });
                 await ctx.editMessageText(`❌ <b>Rad etildi!</b>\n🆔 ID: <code>${orderId}</code>\n👤 Admin: ${adminName}`, { parse_mode: 'HTML' });
-                await ctx.telegram.sendMessage(targetUserId, "To'lov tasdiqlanmadi ❌\nQayta urinib ko'ring yoki admin bilan bog'laning.");
+                await ctx.telegram.sendMessage(targetUserId, "To'lov tasdiqlanmadi ❌");
             }
         } catch (e) {
-            console.error("Firebase update xatosi:", e);
+            console.error("Xato:", e);
             ctx.answerCbQuery("Xatolik yuz berdi!");
         }
     }
 });
 
+// Botni ishga tushirish
 bot.launch();
 console.log("🚀 Bot ishga tushdi...");
+
+// 3. Render port xatosini oldini olish uchun "Keep-Alive" server
+const port = process.env.PORT || 10000;
+http.createServer((req, res) => {
+    res.writeHead(200, { 'Content-Type': 'text/plain' });
+    res.write('Bot is running and healthy!');
+    res.end();
+}).listen(port, () => {
+    console.log(`🌍 Port ${port} tinglanmoqda. Render xatoligi bartaraf etildi.`);
+});
