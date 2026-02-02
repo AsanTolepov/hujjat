@@ -45,7 +45,7 @@ export const TopUp = () => {
             <p className="text-sm text-gray-500">Ushbu ID raqamni nusxalab oling va botga yuboring.</p>
             <Button 
               className="w-full flex gap-2" 
-              onClick={() => window.open(`https://t.me/hujjatuz_bot?start=${orderId}`, '_blank')}
+              onClick={() => window.open(`https://t.me/Hujjat_PaymentBot?start=${orderId}`, '_blank')}
             >
               <ExternalLink size={18} /> Telegram Botga o'tish
             </Button>
