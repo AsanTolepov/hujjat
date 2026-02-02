@@ -2,7 +2,7 @@ const { Telegraf, Markup } = require('telegraf');
 const admin = require('firebase-admin');
 const http = require('http');
 
-// 1. Firebase Admin ulanishi (Render muhitiga moslangan)
+// 1. Firebase Admin ulanishi
 const firebaseConfig = process.env.FIREBASE_CONFIG 
     ? JSON.parse(process.env.FIREBASE_CONFIG) 
     : require("./serviceAccountKey.json");
@@ -21,7 +21,6 @@ const CARD_NUMBER = '8600 0000 0000 0000';
 
 const userState = {};
 
-// Bot buyruqlari
 bot.start((ctx) => {
     ctx.reply("Assalamu aleykum! Saytdan olgan to'lov ID raqamingizni yuboring (Masalan: HUJJAT-123456).");
 });
@@ -40,30 +39,35 @@ bot.on('text', async (ctx) => {
     }
 });
 
-// Chek qabul qilish
+// --- O'ZGARTIRILGAN QISM: Chek rasmidan nusxa olib admin guruhiga yuborish ---
 bot.on('photo', async (ctx) => {
     const userId = ctx.from.id;
     const state = userState[userId];
+    
     if (state && state.orderId && state.amount) {
         const { orderId, amount } = state;
-        await ctx.telegram.sendMessage(ADMIN_GROUP_ID, 
-            `💰 <b>Yangi To'lov So'rovi!</b>\n\n🆔 ID: <code>${orderId}</code>\n💰 Summa: <b>${amount}</b> so'm\n👤 Foydalanuvchi: ${ctx.from.first_name}`,
-            {
-                parse_mode: 'HTML',
-                ...Markup.inlineKeyboard([
-                    [
-                        Markup.button.callback('Tasdiqlash ✅', `app_${orderId}_${amount}_${userId}`),
-                        Markup.button.callback('Rad etish ❌', `rej_${orderId}_${userId}`)
-                    ]
-                ])
-            }
-        );
+        const photoId = ctx.message.photo[ctx.message.photo.length - 1].file_id; // Eng sifatli rasm ID-si
+
+        // Admin guruhiga rasmni matn bilan birga yuborish
+        await ctx.telegram.sendPhoto(ADMIN_GROUP_ID, photoId, {
+            caption: `💰 <b>Yangi To'lov So'rovi!</b>\n\n🆔 ID: <code>${orderId}</code>\n💰 Summa: <b>${amount}</b> so'm\n👤 Foydalanuvchi: ${ctx.from.first_name}`,
+            parse_mode: 'HTML',
+            ...Markup.inlineKeyboard([
+                [
+                    Markup.button.callback('Tasdiqlash ✅', `app_${orderId}_${amount}_${userId}`),
+                    Markup.button.callback('Rad etish ❌', `rej_${orderId}_${userId}`)
+                ]
+            ])
+        });
+
         ctx.reply("Chek qabul qilindi! Adminlarimiz tez orada tasdiqlaydilar.");
         delete userState[userId];
+    } else {
+        ctx.reply("Iltimos, avval to'lov ID raqamingizni va summani kiriting.");
     }
 });
 
-// Tasdiqlash va Rad etish
+// 4. Tasdiqlash va Rad etish
 bot.on('callback_query', async (ctx) => {
     const data = ctx.callbackQuery.data;
     const adminName = ctx.from.first_name;
@@ -93,12 +97,13 @@ bot.on('callback_query', async (ctx) => {
                     amount: amount
                 });
 
-                await ctx.editMessageText(`✅ <b>Tasdiqlandi!</b>\n🆔 ID: <code>${orderId}</code>\n💰 Summa: <b>${amount.toLocaleString()}</b> so'm\n👤 Admin: ${adminName}`, { parse_mode: 'HTML' });
+                // Guruhdagi xabarni (rasm ostidagi matnni) yangilash
+                await ctx.editMessageCaption(`✅ <b>Tasdiqlandi!</b>\n🆔 ID: <code>${orderId}</code>\n💰 Summa: <b>${amount.toLocaleString()}</b> so'm\n👤 Admin: ${adminName}`, { parse_mode: 'HTML' });
                 await ctx.telegram.sendMessage(targetUserId, `To'lovingiz ma'qullandi ✅\nBalansingiz <b>${amount.toLocaleString()}</b> so'mga to'ldirildi.`, { parse_mode: 'HTML' });
             } else {
                 const targetUserId = parts[2];
                 await paymentDoc.ref.update({ status: 'rejected' });
-                await ctx.editMessageText(`❌ <b>Rad etildi!</b>\n🆔 ID: <code>${orderId}</code>\n👤 Foydalanivchi: ${adminName}`, { parse_mode: 'HTML' });
+                await ctx.editMessageCaption(`❌ <b>Rad etildi!</b>\n🆔 ID: <code>${orderId}</code>\n👤 Admin: ${adminName}`, { parse_mode: 'HTML' });
                 await ctx.telegram.sendMessage(targetUserId, "To'lov tasdiqlanmadi ❌");
             }
         } catch (e) {
@@ -108,16 +113,14 @@ bot.on('callback_query', async (ctx) => {
     }
 });
 
-// Botni ishga tushirish
 bot.launch();
 console.log("🚀 Bot ishga tushdi...");
 
-// 3. Render port xatosini oldini olish uchun "Keep-Alive" server
 const port = process.env.PORT || 10000;
 http.createServer((req, res) => {
     res.writeHead(200, { 'Content-Type': 'text/plain' });
     res.write('Bot is running and healthy!');
     res.end();
 }).listen(port, () => {
-    console.log(`🌍 Port ${port} tinglanmoqda. Render xatoligi bartaraf etildi.`);
+    console.log(`🌍 Port ${port} tinglanmoqda.`);
 });
