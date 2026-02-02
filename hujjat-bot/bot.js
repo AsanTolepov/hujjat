@@ -1,10 +1,16 @@
 const { Telegraf, Markup } = require('telegraf');
 const admin = require('firebase-admin');
 
-// 1. Firebase Admin ulanishi
-const serviceAccount = require("./serviceAccountKey.json");
+// 1. Firebase Admin ulanishi (Render va Lokal muhit uchun moslashtirilgan)
+// Render-dagi Environment Variables bo'limiga FIREBASE_CONFIG nomli o'zgaruvchi qo'shasiz
+const firebaseConfig = process.env.FIREBASE_CONFIG 
+    ? JSON.parse(process.env.FIREBASE_CONFIG) 
+    : require("./serviceAccountKey.json");
+
 if (!admin.apps.length) {
-    admin.initializeApp({ credential: admin.credential.cert(serviceAccount) });
+    admin.initializeApp({
+        credential: admin.credential.cert(firebaseConfig)
+    });
 }
 const db = admin.firestore();
 
@@ -45,7 +51,6 @@ bot.on('photo', async (ctx) => {
                 parse_mode: 'HTML',
                 ...Markup.inlineKeyboard([
                     [
-                        // MUHIM: targetUserId tugma ichiga qo'shildi
                         Markup.button.callback('Tasdiqlash ✅', `app_${orderId}_${amount}_${userId}`),
                         Markup.button.callback('Rad etish ❌', `rej_${orderId}_${userId}`)
                     ]
@@ -75,19 +80,18 @@ bot.on('callback_query', async (ctx) => {
             const pData = paymentDoc.data();
 
             if (action === 'app') {
-                const amount = Number(parts[2]); // Admin guruhidan kelgan summa
+                const amount = Number(parts[2]);
                 const targetUserId = parts[3];
             
-                // 1. Foydalanuvchi balansini oshirish (Bu qism sizda ishlayapti)
+                // 1. Foydalanuvchi balansini oshirish
                 await db.collection('users').doc(pData.userId).set({
                     balance: admin.firestore.FieldValue.increment(amount)
                 }, { merge: true });
             
-                // 2. To'lov hujjatini yangilash (MUHIM: amount maydonini qo'shing)
-                // Aynan mana shu qator jadvalda 0 so'm o'rniga haqiqiy summani chiqaradi
+                // 2. To'lov hujjatini yangilash
                 await paymentDoc.ref.update({ 
                     status: 'completed',
-                    amount: amount // Bazadagi 0 ni kiritilgan summaga o'zgartiradi
+                    amount: amount
                 });
 
                 await ctx.editMessageText(`✅ <b>Tasdiqlandi!</b>\n🆔 ID: <code>${orderId}</code>\n💰 Summa: <b>${amount.toLocaleString()}</b> so'm\n👤 Admin: ${adminName}`, { parse_mode: 'HTML' });
