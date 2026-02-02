@@ -98,7 +98,7 @@ bot.on('callback_query', async (ctx) => {
             } else {
                 const targetUserId = parts[2];
                 await paymentDoc.ref.update({ status: 'rejected' });
-                await ctx.editMessageText(`❌ <b>Rad etildi!</b>\n🆔 ID: <code>${orderId}</code>\n👤 Admin: ${adminName}`, { parse_mode: 'HTML' });
+                await ctx.editMessageText(`❌ <b>Rad etildi!</b>\n🆔 ID: <code>${orderId}</code>\n👤 Foydalanivchi: ${adminName}`, { parse_mode: 'HTML' });
                 await ctx.telegram.sendMessage(targetUserId, "To'lov tasdiqlanmadi ❌");
             }
         } catch (e) {

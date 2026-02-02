@@ -1,14 +1,19 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { db } from '../firebase';
 import { useAuth } from '../contexts/AuthContext';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import { Card, Button } from '../components/UIComponents';
-import { CreditCard, ExternalLink, Copy, Check } from 'lucide-react';
+import { CreditCard, ExternalLink, Copy, Check, Zap } from 'lucide-react';
 
 export const TopUp = () => {
   const { user } = useAuth();
   const [orderId, setOrderId] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+
+  // Localhostda keshni tekshirish uchun indicator
+  useEffect(() => {
+    console.log("TopUp komponenti yuklandi - Versiya 2.0");
+  }, []);
 
   const generateID = async () => {
     if (!user) return;
@@ -22,69 +27,94 @@ export const TopUp = () => {
         userId: user.uid,
         userName: user.displayName || user.email,
         status: "pending",
-        amount: 0, // Botda yangilanadi
+        amount: 0,
         createdAt: serverTimestamp()
       });
     } catch (err) {
-      console.error("Xatolik yuz berdi:", err);
+      console.error("Firestore xatosi:", err);
     }
   };
 
   const copyToClipboard = () => {
     if (orderId) {
-      navigator.clipboard.writeText(orderId);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000); // 2 soniyadan keyin piktogrammani qaytaradi
+      navigator.clipboard.writeText(orderId).then(() => {
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+      });
     }
   };
 
   return (
     <div className="max-w-md mx-auto py-12 px-4">
-      <Card className="p-8 text-center border-t-4 border-blue-600 shadow-xl rounded-[2rem] dark:bg-gray-800">
-        <div className="w-16 h-16 bg-blue-100 dark:bg-blue-900/30 text-blue-600 rounded-2xl flex items-center justify-center mx-auto mb-6">
-            <CreditCard size={32} />
+      {/* Sarlavha qismiga yangi rang va belgi qo'shildi */}
+      <Card className="p-8 text-center border-t-4 border-indigo-500 shadow-2xl rounded-[2.5rem] dark:bg-gray-800 transition-all duration-500">
+        <div className="w-20 h-20 bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 rounded-3xl flex items-center justify-center mx-auto mb-6 rotate-3">
+            <Zap size={40} fill="currentColor" />
         </div>
-        <h2 className="text-2xl font-black dark:text-white mb-2 tracking-tight">Hisobni to'ldirish</h2>
-        <p className="text-gray-500 text-sm mb-6">Xizmatlardan foydalanish uchun balansingizni to'ldiring</p>
+        
+        <h2 className="text-3xl font-black dark:text-white mb-2 italic">
+          Tezkor To'lov
+        </h2>
+        <p className="text-gray-400 text-sm mb-8">Balansni to'ldirish uchun ID raqamdan foydalaning</p>
         
         {!orderId ? (
-          <Button onClick={generateID} className="w-full py-4 rounded-2xl font-bold text-lg shadow-lg shadow-blue-200 dark:shadow-none">
-            To'lov ID olish
+          <Button 
+            onClick={generateID} 
+            className="w-full py-5 rounded-2xl font-black text-xl bg-indigo-600 hover:bg-indigo-700 shadow-lg shadow-indigo-200 dark:shadow-none transition-transform active:scale-95"
+          >
+            ID RAQAM OLISH
           </Button>
         ) : (
-          <div className="mt-6 space-y-4 animate-in fade-in zoom-in duration-300">
+          <div className="space-y-6 animate-in slide-in-from-bottom-4 duration-500">
+            {/* Nusxalash bloki */}
             <div 
               onClick={copyToClipboard}
-              className="bg-gray-50 dark:bg-gray-700/50 p-6 rounded-2xl border-2 border-dashed border-blue-200 dark:border-blue-900 cursor-pointer hover:bg-blue-50 transition-all group relative"
+              className={`p-6 rounded-3xl border-2 transition-all cursor-pointer group ${
+                copied ? 'border-green-500 bg-green-50' : 'border-indigo-100 bg-gray-50 dark:bg-gray-700/30 dark:border-gray-600 hover:border-indigo-300'
+              }`}
             >
-              <p className="text-[10px] uppercase font-bold text-gray-400 mb-1">Sizning To'lov ID raqamingiz</p>
-              <div className="flex items-center justify-center gap-3">
-                <p className="text-3xl font-black text-blue-600 tracking-widest">{orderId}</p>
-                {copied ? <Check size={20} className="text-green-500" /> : <Copy size={20} className="text-blue-300 group-hover:text-blue-600" />}
+              <span className="text-[10px] font-bold text-indigo-400 uppercase tracking-widest">To'lov identifikatori</span>
+              <div className="flex items-center justify-center gap-4 mt-2">
+                <code className="text-3xl font-mono font-black text-gray-800 dark:text-white">
+                  {orderId}
+                </code>
+                {copied ? (
+                  <Check size={24} className="text-green-500 animate-bounce" />
+                ) : (
+                  <Copy size={24} className="text-gray-300 group-hover:text-indigo-500 transition-colors" />
+                )}
               </div>
-              {copied && <span className="absolute -top-3 left-1/2 -translate-x-1/2 bg-green-500 text-white text-[10px] px-2 py-1 rounded-full font-bold">Nusxalandi!</span>}
+              <p className={`text-[10px] mt-2 font-medium ${copied ? 'text-green-600' : 'text-gray-400'}`}>
+                {copied ? "Muvaffaqiyatli nusxalandi!" : "Nusxalash uchun ustiga bosing"}
+              </p>
             </div>
-            
-            <p className="text-[11px] text-gray-400 px-4">
-                ID raqamni nusxalash uchun ustiga bosing va quyidagi tugma orqali botga yuboring.
-            </p>
 
-            <Button 
-              className="w-full py-4 rounded-2xl font-black text-lg flex gap-2 justify-center shadow-xl shadow-blue-100 dark:shadow-none" 
-              onClick={() => window.open(`https://t.me/Hujjat_PaymentBot?start=${orderId}`, '_blank')}
-            >
-              <ExternalLink size={20} /> Telegram Botga o'tish
-            </Button>
-            
-            <button 
-                onClick={() => setOrderId(null)} 
-                className="text-xs text-gray-400 hover:text-blue-600 font-medium underline transition-all"
-            >
-                Yangi ID yaratish
-            </button>
+            {/* Botga o'tish tugmasi */}
+            <div className="pt-2">
+              <Button 
+                className="w-full py-5 rounded-3xl font-bold text-lg flex gap-3 justify-center items-center bg-blue-500 hover:bg-blue-600 shadow-xl" 
+                onClick={() => window.open(`https://t.me/Hujjat_PaymentBot?start=${orderId}`, '_blank')}
+              >
+                <ExternalLink size={22} /> Telegram Botga O'tish
+              </Button>
+              
+              <button 
+                onClick={() => setOrderId(null)}
+                className="mt-6 text-sm text-gray-400 hover:text-indigo-500 font-semibold transition-colors"
+              >
+                ← Qaytish va yangi ID olish
+              </button>
+            </div>
           </div>
         )}
       </Card>
+      
+      {/* Localhostda ekanligingizni eslatuvchi kichik belgi */}
+      <div className="mt-8 text-center">
+        <span className="px-3 py-1 bg-yellow-100 text-yellow-700 text-[10px] font-bold rounded-full uppercase tracking-tighter">
+          Local Development Mode
+        </span>
+      </div>
     </div>
   );
 };
