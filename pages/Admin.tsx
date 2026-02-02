@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { BarChart, Users, FileText, Settings, DollarSign, Plus, Search, Bell, Menu, ArrowUpRight, ArrowDownRight, CreditCard, Download, Sun, Moon } from 'lucide-react';
-import { Card, Button, Badge, Input, Select } from '../components/UIComponents';
-import { documents, userOrders, categories } from '../data/mockData';
+import { BarChart, FileText, Settings, DollarSign, Plus, Search, Bell, Menu, ArrowUpRight, ArrowDownRight, Sun, Moon } from 'lucide-react';
+import { Card, Button, Badge } from '../components/UIComponents';
+import { documents, userOrders } from '../data/mockData';
 import { LanguageSwitcher } from '../components/Layout';
 import { useLanguage } from '../contexts/LanguageContext';
 
-type TabType = 'dashboard' | 'documents' | 'users' | 'finance' | 'settings';
+type TabType = 'dashboard' | 'documents' | 'settings';
 
 export const Admin = () => {
   const [activeTab, setActiveTab] = useState<TabType>('dashboard');
@@ -14,7 +14,6 @@ export const Admin = () => {
   const { t, tr } = useLanguage();
 
   useEffect(() => {
-     // Check initial theme
      const isDarkMode = document.documentElement.classList.contains('dark');
      setIsDark(isDarkMode);
   }, []);
@@ -22,247 +21,142 @@ export const Admin = () => {
   const toggleTheme = () => {
     const newMode = !isDark;
     setIsDark(newMode);
-    if (newMode) {
-      document.documentElement.classList.add('dark');
-      localStorage.theme = 'dark';
-    } else {
-      document.documentElement.classList.remove('dark');
-      localStorage.theme = 'light';
-    }
+    document.documentElement.classList.toggle('dark');
   };
 
+  // Moliya va Foydalanuvchilar olib tashlandi
   const menuItems = [
-    { id: 'dashboard', label: t('admin.menu.dashboard'), icon: BarChart },
-    { id: 'documents', label: t('admin.menu.docs'), icon: FileText },
-    { id: 'users', label: t('admin.menu.users'), icon: Users },
-    { id: 'finance', label: t('admin.menu.finance'), icon: DollarSign },
-    { id: 'settings', label: t('admin.menu.settings'), icon: Settings },
+    { id: 'dashboard', label: 'Umumiy ko‘rsatkichlar', icon: BarChart },
+    { id: 'documents', label: 'Hujjatlar', icon: FileText },
+    { id: 'settings', label: 'Sozlamalar', icon: Settings },
   ];
-
-  // --- Views ---
 
   const DashboardView = () => (
     <div className="space-y-6">
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {[
-          { title: 'Jami foydalanuvchilar', value: '1,234', change: '+12%', isPositive: true, icon: Users, color: 'bg-blue-500' },
+          { title: 'Jami foydalanuvchilar', value: '1,234', change: '+12%', isPositive: true, icon: BarChart, color: 'bg-blue-500' },
           { title: 'Jami hujjatlar', value: '12,543', change: '+5%', isPositive: true, icon: FileText, color: 'bg-green-500' },
-          { title: 'Bugungi tushum', value: '2.5 mln', change: '-2%', isPositive: false, icon: DollarSign, color: 'bg-yellow-500' },
-          { title: 'Yangi buyurtmalar', value: '45', change: '+18%', isPositive: true, icon: BarChart, color: 'bg-purple-500' },
+          { title: 'Jami summa', value: '45.8 mln', change: '+18%', isPositive: true, icon: DollarSign, color: 'bg-purple-500' },
         ].map((stat, i) => (
-          <Card key={i} className="p-6">
+          <Card key={i} className="p-6 rounded-[2rem] border-none shadow-xl shadow-gray-100 dark:shadow-none">
              <div className="flex items-center justify-between">
-               <div className={`p-3 rounded-full ${stat.color} text-white`}>
-                  <stat.icon size={24} />
+               <div className={`p-4 rounded-2xl ${stat.color} text-white shadow-lg`}>
+                  <stat.icon size={28} />
                </div>
-               <span className={`flex items-center text-sm font-medium ${stat.isPositive ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
+               <span className={`flex items-center text-sm font-bold px-3 py-1 rounded-full ${stat.isPositive ? 'bg-green-50 text-green-600' : 'bg-red-50 text-red-600'}`}>
                   {stat.change}
                   {stat.isPositive ? <ArrowUpRight size={16} /> : <ArrowDownRight size={16} />}
                </span>
              </div>
-             <div className="mt-4">
-                <p className="text-sm text-gray-500 dark:text-gray-400">{tr(stat.title)}</p>
-                <p className="text-2xl font-bold text-gray-900 dark:text-white">{stat.value}</p>
+             <div className="mt-6">
+                <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">{stat.title}</p>
+                <p className="text-3xl font-black text-gray-900 dark:text-white mt-1">{stat.value}</p>
              </div>
           </Card>
         ))}
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-         <Card className="p-6">
-            <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4">So'nggi buyurtmalar</h3>
-            <div className="space-y-4">
-               {userOrders.map(order => (
-                  <div key={order.id} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
-                     <div className="flex items-center gap-3">
-                        <div className="h-10 w-10 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded flex items-center justify-center text-primary-600 dark:text-primary-400">
-                           <FileText size={20} />
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+         {/* Oylik to'lovlar jadvali (Placeholder) */}
+         <Card className="lg:col-span-2 p-8 rounded-[2.5rem] border-none shadow-xl">
+            <h3 className="text-xl font-black mb-6">Oylik to'lovlar tahlili</h3>
+            <div className="h-64 flex items-end justify-between gap-2 px-4">
+              {[
+                { m: 'Yan', v: 40 }, { m: 'Fev', v: 65 }, { m: 'Mar', v: 45 }, 
+                { m: 'Apr', v: 80 }, { m: 'May', v: 55 }, { m: 'Iyun', v: 90 }
+              ].map((bar, i) => (
+                <div key={i} className="flex-1 flex flex-col items-center gap-2">
+                  <div 
+                    className="w-full bg-primary-500 rounded-t-xl transition-all duration-500 hover:bg-primary-600" 
+                    style={{ height: `${bar.v}%` }}
+                  ></div>
+                  <span className="text-[10px] font-bold text-gray-400">{bar.m}</span>
+                </div>
+              ))}
+            </div>
+         </Card>
+
+         <Card className="p-8 rounded-[2.5rem] border-none shadow-xl">
+            <h3 className="text-xl font-black mb-6">So'nggi buyurtmalar</h3>
+            <div className="space-y-5">
+               {userOrders.slice(0, 5).map(order => (
+                  <div key={order.id} className="flex items-center justify-between">
+                     <div className="flex items-center gap-4">
+                        <div className="h-10 w-10 bg-gray-50 dark:bg-gray-700 rounded-xl flex items-center justify-center text-primary-600">
+                            <FileText size={20} />
                         </div>
                         <div>
-                           <div className="font-medium text-gray-900 dark:text-white">{tr(order.documentTitle)}</div>
-                           <div className="text-xs text-gray-500 dark:text-gray-400">{order.date}</div>
+                           <div className="text-sm font-bold text-gray-900 dark:text-white line-clamp-1">{tr(order.documentTitle)}</div>
+                           <div className="text-[10px] text-gray-400 font-medium">{order.date}</div>
                         </div>
                      </div>
                      <div className="text-right">
-                        <div className="font-bold text-gray-900 dark:text-white">{order.amount > 0 ? order.amount.toLocaleString() : '0'} so‘m</div>
+                        <div className="text-xs font-black text-blue-600">{order.amount.toLocaleString()} so‘m</div>
                         <Badge color={order.status === 'completed' ? 'green' : 'yellow'}>{order.status}</Badge>
                      </div>
                   </div>
                ))}
             </div>
          </Card>
-         <Card className="p-6">
-             <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4">Server holati</h3>
-             <div className="space-y-4">
-                <div>
-                   <div className="flex justify-between text-sm mb-1">
-                      <span className="text-gray-600 dark:text-gray-400">CPU Bandligi</span>
-                      <span className="font-medium text-gray-900 dark:text-white">45%</span>
-                   </div>
-                   <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
-                      <div className="bg-primary-600 h-2 rounded-full" style={{ width: '45%' }}></div>
-                   </div>
-                </div>
-                <div>
-                   <div className="flex justify-between text-sm mb-1">
-                      <span className="text-gray-600 dark:text-gray-400">Xotira (RAM)</span>
-                      <span className="font-medium text-gray-900 dark:text-white">60%</span>
-                   </div>
-                   <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
-                      <div className="bg-yellow-500 h-2 rounded-full" style={{ width: '60%' }}></div>
-                   </div>
-                </div>
-             </div>
-         </Card>
       </div>
     </div>
-  );
-
-  const DocumentsView = () => (
-    <div className="bg-white dark:bg-gray-800 rounded-lg shadow">
-       <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700 flex flex-col sm:flex-row justify-between items-center gap-4">
-          <h3 className="font-bold text-gray-800 dark:text-white text-lg">Hujjatlar ro‘yxati</h3>
-          <div className="flex gap-2 w-full sm:w-auto">
-             <div className="relative flex-grow sm:flex-grow-0">
-                <input type="text" placeholder="Qidirish..." className="pl-8 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm focus:ring-primary-500 focus:border-primary-500 w-full bg-white dark:bg-gray-700 dark:text-white dark:placeholder-gray-400" />
-                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-400" />
-             </div>
-             <Button size="sm"><Plus size={16} className="mr-1"/> Yangi</Button>
-          </div>
-       </div>
-       <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-             <thead className="bg-gray-50 dark:bg-gray-700">
-                <tr>
-                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Nomi</th>
-                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Kategoriya</th>
-                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Narx (PDF)</th>
-                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Status</th>
-                   <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Amallar</th>
-                </tr>
-             </thead>
-             <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-                {documents.map((doc) => (
-                   <tr key={doc.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">{tr(doc.title)}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                        <Badge color="blue">{tr(categories.find(c => c.id === doc.categoryId)?.name || doc.categoryId)}</Badge>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">{doc.pricePdf.toLocaleString()} so‘m</td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                         <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200">Faol</span>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                         <button className="text-primary-600 dark:text-primary-400 hover:text-primary-900 dark:hover:text-primary-300 mr-4">Tahrirlash</button>
-                         <button className="text-red-600 dark:text-red-400 hover:text-red-900 dark:hover:text-red-300">O‘chirish</button>
-                      </td>
-                   </tr>
-                ))}
-             </tbody>
-          </table>
-       </div>
-    </div>
-  );
-
-  // Other views can remain untranslated for brevity in this response or follow the same pattern
-  const UsersView = () => (
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6 text-gray-500 dark:text-gray-400 text-center">
-         Foydalanuvchilar bo'limi (Demo)
-      </div>
-  );
-
-  const FinanceView = () => (
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6 text-gray-500 dark:text-gray-400 text-center">
-         Moliya bo'limi (Demo)
-      </div>
-  );
-
-  const SettingsView = () => (
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6 text-gray-500 dark:text-gray-400 text-center">
-         Sozlamalar bo'limi (Demo)
-      </div>
   );
 
   return (
-    <div className="flex h-screen bg-gray-100 dark:bg-gray-900 overflow-hidden transition-colors">
+    <div className="flex h-screen bg-gray-50 dark:bg-gray-900 overflow-hidden font-sans">
       {/* Sidebar */}
-      <div 
-        className={`fixed inset-0 z-20 bg-black bg-opacity-50 transition-opacity lg:hidden ${sidebarOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}
-        onClick={() => setSidebarOpen(false)}
-      ></div>
-
-      <div className={`fixed inset-y-0 left-0 z-30 w-64 bg-gray-900 dark:bg-gray-950 text-white transform transition-transform duration-300 ease-in-out lg:translate-x-0 lg:static lg:inset-auto ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'} flex flex-col`}>
-        <div className="flex items-center justify-center h-16 bg-gray-800 dark:bg-gray-900 border-b border-gray-700 flex-shrink-0">
-          <span className="text-xl font-bold tracking-wider">{t('admin.panel')}</span>
+      <div className={`fixed inset-y-0 left-0 z-30 w-72 bg-gray-950 text-white transform transition-transform duration-300 lg:translate-x-0 lg:static ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'} flex flex-col rounded-r-[3rem] lg:rounded-none`}>
+        <div className="flex items-center justify-center h-24 border-b border-gray-800">
+          <span className="text-2xl font-black tracking-tighter">ADMIN <span className="text-primary-500">PANEL</span></span>
         </div>
-        <nav className="flex-1 mt-6 px-4 space-y-2 overflow-y-auto">
+        <nav className="flex-1 mt-10 px-6 space-y-3">
           {menuItems.map((item) => (
             <button
               key={item.id}
-              onClick={() => {
-                setActiveTab(item.id as TabType);
-                setSidebarOpen(false);
-              }}
-              className={`flex items-center w-full px-4 py-3 rounded-lg transition-colors ${
-                activeTab === item.id 
-                  ? 'bg-primary-600 text-white shadow-lg' 
-                  : 'text-gray-400 hover:bg-gray-800 dark:hover:bg-gray-900 hover:text-white'
-              }`}
+              onClick={() => { setActiveTab(item.id as TabType); setSidebarOpen(false); }}
+              className={`flex items-center w-full px-6 py-4 rounded-2xl transition-all ${activeTab === item.id ? 'bg-primary-600 text-white shadow-2xl shadow-primary-500/40' : 'text-gray-500 hover:bg-gray-900 hover:text-white'}`}
             >
-              <item.icon className="w-5 h-5 mr-3" />
-              <span className="font-medium">{item.label}</span>
+              <item.icon className="w-5 h-5 mr-4" />
+              <span className="font-bold text-sm">{item.label}</span>
             </button>
           ))}
         </nav>
-        <div className="p-4 border-t border-gray-800 dark:border-gray-900 flex-shrink-0">
-           <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-full bg-gray-700 flex items-center justify-center text-xs">
-                 A
+        <div className="p-8 border-t border-gray-800">
+           <button className="flex items-center gap-3 group">
+              <div className="w-10 h-10 rounded-2xl bg-gray-800 flex items-center justify-center font-bold group-hover:bg-primary-600 transition-colors text-white">A</div>
+              <div className="text-left">
+                 <p className="text-xs font-black text-white">Asan Tolepov</p>
+                 <p className="text-[10px] text-gray-500">Bosh admin</p>
               </div>
-              <div>
-                 <p className="text-sm font-medium text-white">Admin User</p>
-                 <p className="text-xs text-gray-500">admin@hujjat.uz</p>
-              </div>
-           </div>
+           </button>
         </div>
       </div>
 
       {/* Main Content */}
       <div className="flex-1 flex flex-col overflow-hidden">
-        <header className="bg-white dark:bg-gray-800 shadow-sm py-3 px-6 flex justify-between items-center z-10 transition-colors">
-           <div className="flex items-center">
-              <button 
-                onClick={() => setSidebarOpen(true)}
-                className="lg:hidden mr-4 text-gray-500 dark:text-gray-400 focus:outline-none"
-              >
-                <Menu size={24} />
-              </button>
-              <h2 className="text-xl font-semibold text-gray-800 dark:text-white">
+        <header className="h-20 bg-white dark:bg-gray-800 shadow-sm px-10 flex justify-between items-center z-10 transition-colors">
+           <div className="flex items-center gap-4">
+              <button onClick={() => setSidebarOpen(true)} className="lg:hidden text-gray-500"><Menu size={24} /></button>
+              <h2 className="text-xl font-black text-gray-800 dark:text-white uppercase tracking-tight">
                 {menuItems.find(i => i.id === activeTab)?.label}
               </h2>
            </div>
-           <div className="flex items-center gap-4">
-              <LanguageSwitcher />
-              <button
-                onClick={toggleTheme}
-                className="p-2 rounded-lg text-gray-500 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-700 focus:outline-none"
-              >
-                {isDark ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
+           <div className="flex items-center gap-6">
+              <button onClick={toggleTheme} className="p-3 rounded-2xl bg-gray-50 dark:bg-gray-700 text-gray-500">
+                {isDark ? <Sun size={20} /> : <Moon size={20} />}
               </button>
-              <button className="relative p-2 text-gray-400 hover:text-gray-500 dark:hover:text-gray-300">
+              <div className="relative p-3 rounded-2xl bg-gray-50 dark:bg-gray-700 text-gray-500 cursor-pointer">
                  <Bell size={20} />
-                 <span className="absolute top-1.5 right-1.5 block h-2 w-2 rounded-full bg-red-500 ring-2 ring-white"></span>
-              </button>
-              <div className="h-8 w-8 bg-primary-500 rounded-full flex items-center justify-center text-white font-bold">A</div>
+                 <span className="absolute top-3 right-3 h-2 w-2 rounded-full bg-red-500 border-2 border-white"></span>
+              </div>
            </div>
         </header>
         
-        <main className="flex-1 overflow-auto p-6 bg-gray-100 dark:bg-gray-900 transition-colors">
+        <main className="flex-1 overflow-auto p-10">
            {activeTab === 'dashboard' && <DashboardView />}
-           {activeTab === 'documents' && <DocumentsView />}
-           {activeTab === 'users' && <UsersView />}
-           {activeTab === 'finance' && <FinanceView />}
-           {activeTab === 'settings' && <SettingsView />}
+           {activeTab === 'documents' && <div className="p-10 text-center text-gray-400">Hujjatlar boshqaruvi yuklanmoqda...</div>}
+           {activeTab === 'settings' && <div className="p-10 text-center text-gray-400">Sozlamalar yuklanmoqda...</div>}
         </main>
       </div>
     </div>
