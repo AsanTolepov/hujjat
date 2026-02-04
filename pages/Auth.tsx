@@ -2,7 +2,8 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, Button, Input } from '../components/UIComponents';
 import { Shield, ArrowRight } from 'lucide-react';
-import { signInWithGoogle } from '../firebase';
+import { signInWithGoogle, db } from '../firebase'; // db qo'shildi
+import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
 
 export const Auth = () => {
   const [isLogin, setIsLogin] = useState(true);
@@ -11,28 +12,44 @@ export const Auth = () => {
   const [error, setError] = useState('');
   const navigate = useNavigate();
 
+  const handleGoogleLogin = async () => {
+    try {
+      const result = await signInWithGoogle();
+      const user = result.user;
+
+      // Firestore'da foydalanuvchi borligini tekshirish
+      const userRef = doc(db, "users", user.uid);
+      const userSnap = await getDoc(userRef);
+
+      if (!userSnap.exists()) {
+        // Yangi foydalanuvchi bo'lsa, doimiy 6 xonali ID yaratish
+        const newPaymentId = Math.floor(100000 + Math.random() * 900000).toString();
+        
+        await setDoc(userRef, {
+          full_name: user.displayName || "Foydalanuvchi",
+          email: user.email,
+          balance: 0,
+          paymentId: newPaymentId, // Doimiy ID
+          createdAt: serverTimestamp()
+        });
+      }
+      
+      navigate('/profile');
+    } catch (error) {
+      console.error("Xatolik yuz berdi:", error);
+      setError("Google orqali kirishda xatolik yuz berdi.");
+    }
+  };
+
   const handleAuth = (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
-
-    // --- ADMIN TEKSHIRUVI ---
     if (isLogin && email === 'admin' && password === 'admin') {
       navigate('/admin');
       return;
     }
-
-    // Oddiy foydalanuvchilar uchun xabar (Hozircha faqat Google login to'liq ishlaydi)
     if (isLogin) {
       setError('Email yoki parol noto‘g‘ri (Admin uchun: admin / admin)');
-    }
-  };
-
-  const handleGoogleLogin = async () => {
-    try {
-      await signInWithGoogle();
-      navigate('/profile');
-    } catch (error) {
-      console.error("Xatolik yuz berdi:", error);
     }
   };
 
@@ -57,26 +74,9 @@ export const Auth = () => {
 
         <form className="space-y-4" onSubmit={handleAuth}>
           {!isLogin && <Input label="Ism va familiya" placeholder="Azizbek Tursunov" type="text" required />}
-          
-          <Input 
-            label="Email yoki Login" 
-            placeholder="example@mail.com" 
-            type="text" 
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            required 
-          />
-          
-          <Input 
-            label="Parol" 
-            placeholder="••••••••" 
-            type="password" 
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required 
-          />
-          
-          <Button type="submit" variant="primary" className="w-full py-4 rounded-2xl font-black text-lg flex gap-2 justify-center shadow-lg shadow-primary-200 dark:shadow-none">
+          <Input label="Email yoki Login" placeholder="example@mail.com" type="text" value={email} onChange={(e) => setEmail(e.target.value)} required />
+          <Input label="Parol" placeholder="••••••••" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required />
+          <Button type="submit" variant="primary" className="w-full py-4 rounded-2xl font-black text-lg flex gap-2 justify-center shadow-lg">
             {isLogin ? 'Kirish' : 'Ro‘yxatdan o‘tish'} <ArrowRight size={20} />
           </Button>
         </form>
@@ -86,17 +86,10 @@ export const Auth = () => {
           <span className="relative px-4 bg-white dark:bg-gray-900 text-[10px] font-black uppercase text-gray-400">yoki</span>
         </div>
 
-        <Button onClick={handleGoogleLogin} variant="secondary" className="w-full py-3 rounded-2xl flex gap-3 border-gray-100 dark:border-gray-800 font-bold justify-center items-center">
+        <Button onClick={handleGoogleLogin} variant="secondary" className="w-full py-3 rounded-2xl flex gap-3 border-gray-100 font-bold justify-center items-center">
           <img src="https://www.svgrepo.com/show/355037/google.svg" className="w-5 h-5" alt="google" />
           Google bilan kirish
         </Button>
-
-        <p className="mt-8 text-center text-sm text-gray-500 font-medium">
-          {isLogin ? "Hisobingiz yo'qmi?" : "Hisobingiz bormi?"}
-          <button onClick={() => setIsLogin(!isLogin)} className="ml-2 font-black text-primary-600 hover:underline">
-            {isLogin ? 'Ro‘yxatdan o‘ting' : 'Tizimga kiring'}
-          </button>
-        </p>
       </Card>
     </div>
   );
