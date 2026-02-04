@@ -18,7 +18,7 @@ export const Profile = () => {
   useEffect(() => {
     if (!user) return;
 
-    // 1. Foydalanuvchi asosiy ma'lumotlari (Balans va ID)
+    // 1. Foydalanuvchi asosiy ma'lumotlari
     const unsubUser = onSnapshot(doc(db, "users", user.uid), (s) => {
       if (s.exists()) {
         const data = s.data();
@@ -35,23 +35,27 @@ export const Profile = () => {
     );
     const unsubDocs = onSnapshot(qDocs, (s) => setDocHistory(s.docs.map(d => ({ id: d.id, ...d.data() }))));
 
-    // 3. TO'LOVLAR TARIXI (Sizda ishlamayotgan qism)
-    // userId: "123456" bo'lgan hujjatlarni payments kolleksiyasidan qidiramiz
+    return () => { unsubUser(); unsubDocs(); };
+  }, [user]);
+
+  // To'lovlar tarixi uchun alohida useEffect (paymentId o'zgarganda ishlaydi)
+  useEffect(() => {
+    if (!user || !dbUser?.paymentId) return;
+
     const qPays = query(
       collection(db, "payments"), 
-      where("userId", "==", dbUser?.paymentId || "123456") 
+      where("userId", "==", dbUser.paymentId) 
     );
 
     const unsubPays = onSnapshot(qPays, (s) => {
       const pays = s.docs.map(d => ({ id: d.id, ...d.data() }));
-      // Xronologik tartiblash (Indeks talab qilmasligi uchun kodda tartiblaymiz)
       pays.sort((a: any, b: any) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
       setPayHistory(pays);
     }, (error) => {
       console.error("To'lovlarni yuklashda xato:", error);
     });
 
-    return () => { unsubUser(); unsubDocs(); unsubPays(); };
+    return () => unsubPays();
   }, [user, dbUser?.paymentId]);
 
   const copyToClipboard = () => {
@@ -68,7 +72,7 @@ export const Profile = () => {
     <div className="max-w-7xl mx-auto px-4 py-8 flex flex-col md:flex-row gap-8">
       {/* CHAP TOMON: PROFIL */}
       <div className="md:w-1/3 space-y-4">
-        <Card className="p-8 text-center rounded-3xl shadow-sm bg-white dark:bg-gray-800">
+        <Card className="p-8 text-center rounded-3xl shadow-sm bg-white dark:bg-gray-800 border-none">
           <div className="w-24 h-24 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center text-3xl font-bold mx-auto mb-4 uppercase">
             {dbUser?.full_name ? dbUser.full_name[0] : 'U'}
           </div>
@@ -124,7 +128,51 @@ export const Profile = () => {
           </div>
         </Card>
       </div>
-      {/* ... Modal qismi o'zgarishsiz qoladi ... */}
+
+      {/* MODAL OYNASI - MUHIM QISM */}
+      {showModal && (
+        <div className="fixed inset-0 z-[999] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+          <div className="bg-white dark:bg-gray-800 rounded-[2rem] p-8 max-w-sm w-full relative shadow-2xl text-center">
+            <button 
+              onClick={() => setShowModal(false)} 
+              className="absolute right-6 top-6 text-gray-400 hover:text-gray-600 transition-colors"
+            >
+              <X size={20} />
+            </button>
+            
+            <div className="w-16 h-16 bg-blue-100 text-blue-600 rounded-2xl flex items-center justify-center mx-auto mb-4">
+              <CreditCard size={30} />
+            </div>
+            
+            <h3 className="font-bold text-lg mb-4 dark:text-white">To'lov ID raqami:</h3>
+            
+            <div 
+              onClick={copyToClipboard}
+              className="bg-gray-50 dark:bg-gray-700 p-4 rounded-xl mb-6 border-2 border-dashed border-blue-200 cursor-pointer hover:bg-blue-50 dark:hover:bg-gray-600 transition-all flex items-center justify-center gap-3 group"
+            >
+              <span className="font-black text-blue-600 dark:text-blue-400 text-2xl tracking-widest">
+                {dbUser?.paymentId || "—"}
+              </span>
+              {copied ? (
+                <CheckCircle2 size={20} className="text-green-500" />
+              ) : (
+                <Copy size={18} className="text-gray-300 group-hover:text-blue-500" />
+              )}
+            </div>
+            
+            <p className="text-gray-400 text-xs mb-6 font-medium">
+              Nusxalash uchun ID ustiga bosing va botga yuboring.
+            </p>
+            
+            <Button 
+              className="w-full py-4 rounded-xl font-black text-lg flex gap-2 justify-center shadow-lg shadow-blue-100 dark:shadow-none" 
+              onClick={() => window.open(`https://t.me/Hujjat_PaymentBot?start=${dbUser?.paymentId}`, '_blank')}
+            >
+              <ExternalLink size={20} /> Botga o'tish
+            </Button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
