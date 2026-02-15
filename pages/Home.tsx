@@ -1,8 +1,8 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { Search, FileText, CheckCircle, ArrowRight, Zap, Shield, PenTool } from 'lucide-react';
+import { Search, FileText, CheckCircle, ArrowRight, PenTool } from 'lucide-react';
 import { Button, Card, Badge } from '../components/UIComponents';
-import { categories, documents } from '../data/mockData';
+import { documents } from '../data/mockData';
 import { useLanguage } from '../contexts/LanguageContext';
 
 const Hero = () => {
@@ -10,6 +10,7 @@ const Hero = () => {
   return (
     <div className="relative bg-white dark:bg-gray-900 overflow-hidden transition-colors">
       <div className="max-w-7xl mx-auto">
+        {/* lg:pb-28 va xl:pb-32 faqat katta ekranlarda bo'shliq yaratadi */}
         <div className="relative z-10 pb-8 bg-white dark:bg-gray-900 sm:pb-16 md:pb-20 lg:max-w-2xl lg:w-full lg:pb-28 xl:pb-32 transition-colors">
           <svg
             className="hidden lg:block absolute right-0 inset-y-0 h-full w-48 text-white dark:text-gray-900 transform translate-x-1/2 transition-colors"
@@ -21,6 +22,7 @@ const Hero = () => {
             <polygon points="50,0 100,0 50,100 0,100" />
           </svg>
 
+          {/* mt-10 mobil uchun, lg:mt-20 esa desktop uchun */}
           <main className="mt-10 mx-auto max-w-7xl px-4 sm:mt-12 sm:px-6 md:mt-16 lg:mt-20 lg:px-8 xl:mt-28">
             <div className="sm:text-center lg:text-left">
               <h1 className="text-4xl tracking-tight font-extrabold text-gray-900 dark:text-white sm:text-5xl md:text-6xl">
@@ -46,7 +48,9 @@ const Hero = () => {
           </main>
         </div>
       </div>
-      <div className="lg:absolute lg:inset-y-0 lg:right-0 lg:w-1/2 bg-primary-50 dark:bg-gray-800 flex items-center justify-center transition-colors">
+      
+      {/* BU YERDA: hidden lg:flex qo'shildi. Bu mobil ekranlarda bo'shliqni yo'qotadi */}
+      <div className="hidden lg:flex lg:absolute lg:inset-y-0 lg:right-0 lg:w-1/2 bg-primary-50 dark:bg-gray-800 items-center justify-center transition-colors">
         <div className="grid grid-cols-2 gap-4 p-8 opacity-60 transform rotate-[-5deg] scale-90">
            <div className="h-64 w-48 bg-white dark:bg-gray-700 rounded shadow-lg border dark:border-gray-600 p-4"></div>
            <div className="h-64 w-48 bg-white dark:bg-gray-700 rounded shadow-lg border dark:border-gray-600 p-4 mt-12"></div>
@@ -73,18 +77,9 @@ const Features = () => {
         <div className="mt-10">
           <dl className="space-y-10 md:space-y-0 md:grid md:grid-cols-3 md:gap-x-8 md:gap-y-10">
             {[
-              {
-                name: t('nav.documents'),
-                icon: Search
-              },
-              {
-                name: 'Ma’lumotlarni kiriting', // Leaving some hardcoded for demo brevity or map nicely in dictionary
-                icon: PenTool
-              },
-              {
-                name: 'Yuklab oling',
-                icon: CheckCircle
-              },
+              { name: t('nav.documents'), icon: Search },
+              { name: 'Ma’lumotlarni kiriting', icon: PenTool },
+              { name: 'Yuklab oling', icon: CheckCircle },
             ].map((feature, i) => (
               <div key={i} className="relative bg-white dark:bg-gray-800 p-6 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 transition-colors">
                 <div className="absolute flex items-center justify-center h-12 w-12 rounded-md bg-primary-500 text-white">

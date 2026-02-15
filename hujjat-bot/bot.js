@@ -1,3 +1,5 @@
+require('dotenv').config({ path: '../.env' });
+console.log("Token topildimi:", process.env.BOT_TOKEN ? "Ha" : "Yo'q");
 const { Telegraf, Markup } = require('telegraf');
 const admin = require('firebase-admin');
 const http = require('http');
@@ -14,10 +16,10 @@ if (!admin.apps.length) {
 }
 const db = admin.firestore();
 
-// 2. Bot sozlamalari
-const bot = new Telegraf('8541025572:AAH7YG2IexOM25ssuGycIOhpEHWEtNklkUw');
-const ADMIN_GROUP_ID = '-1003397664852'; 
-const CARD_NUMBER = '8600 0000 0000 0000'; // O'zingizning karta raqamingiz
+// 2. Bot sozlamalari - ENDI XAVFSIZ!
+const bot = new Telegraf(process.env.BOT_TOKEN);
+const ADMIN_GROUP_ID = process.env.ADMIN_GROUP_ID; 
+const CARD_NUMBER = process.env.CARD_NUMBER; 
 
 const userState = {};
 
@@ -29,7 +31,6 @@ bot.on('text', async (ctx) => {
     const text = ctx.message.text.trim();
     const tgId = ctx.from.id;
 
-    // A. ID raqamini tekshirish
     if (/^\d{6}$/.test(text) && !userState[tgId]) {
         try {
             const userSnap = await db.collection('users').where('paymentId', '==', text).limit(1).get();
@@ -52,7 +53,6 @@ bot.on('text', async (ctx) => {
         return;
     }
 
-    // B. Summani qabul qilish
     if (userState[tgId] && !userState[tgId].amount) {
         if (!isNaN(text) && Number(text) > 0) {
             userState[tgId].amount = Number(text);
@@ -63,7 +63,6 @@ bot.on('text', async (ctx) => {
     }
 });
 
-// 3. Chekni (Rasm) qabul qilish va Adminga yuborish
 bot.on('photo', async (ctx) => {
     const tgId = ctx.from.id;
     const state = userState[tgId];
@@ -93,7 +92,6 @@ bot.on('photo', async (ctx) => {
     }
 });
 
-// 4. Admin Tasdiqlash / Rad etish mantiqi
 bot.on('callback_query', async (ctx) => {
     const data = ctx.callbackQuery.data;
     const adminName = ctx.from.first_name;
@@ -105,12 +103,10 @@ bot.on('callback_query', async (ctx) => {
 
     try {
         if (action === 'app') {
-            // Firestore-da balansni yangilash
             await db.collection('users').doc(state.authUid).update({
                 balance: admin.firestore.FieldValue.increment(state.amount)
             });
 
-            // To'lov tarixiga yozish
             await db.collection('payments').add({
                 userId: state.paymentId,
                 authUid: state.authUid,
@@ -120,7 +116,6 @@ bot.on('callback_query', async (ctx) => {
                 userName: state.fullName
             });
 
-            // Adminga xabarni yangilab ko'rsatish (Ma'lumotlar saqlanib qoladi)
             await ctx.editMessageCaption(`✅ <b>To'lov Tasdiqlandi!</b>\n\n🆔 ID: <code>${state.paymentId}</code>\n👤 Ism: <b>${state.fullName}</b>\n💰 Summa: <b>${state.amount.toLocaleString()}</b> so'm\n👤 Admin: <b>${adminName}</b>`, { parse_mode: 'HTML' });
             
             await bot.telegram.sendMessage(targetTgId, `✅ To'lovingiz tasdiqlandi!\nBalansingiz <b>${state.amount.toLocaleString()}</b> so'mga to'ldirildi.`, { parse_mode: 'HTML' });
@@ -128,7 +123,7 @@ bot.on('callback_query', async (ctx) => {
         } else if (action === 'rej') {
             await ctx.editMessageCaption(`❌ <b>To'lov Rad Etildi!</b>\n\n🆔 ID: <code>${state.paymentId}</code>\n👤 Ism: <b>${state.fullName}</b>\n👤 Admin: <b>${adminName}</b>`, { parse_mode: 'HTML' });
             
-            await bot.telegram.sendMessage(targetTgId, "❌ Kechirasiz, yuborgan chekingiz rad etildi. Ma'lumotlarni tekshirib qayta yuboring.");
+            await bot.telegram.sendMessage(targetTgId, "❌ Kechirasiz, yuborgan chekingiz rad etildi. Ma'mulotlarni tekshirib qayta yuboring.");
         }
 
         delete userState[targetTgId];
@@ -139,9 +134,8 @@ bot.on('callback_query', async (ctx) => {
 });
 
 bot.launch();
-console.log("🚀 Bot yanada aqlli holatda ishga tushdi...");
+console.log("🚀 Bot xavfsiz holatda ishga tushdi...");
 
-// Keep-alive server
 const port = process.env.PORT || 10000;
 http.createServer((req, res) => {
     res.writeHead(200, { 'Content-Type': 'text/plain' });
